@@ -107,7 +107,7 @@ class ModSim(Simulator):
             # timeout is too fast for 19200
             self.server._serial.timeout = self.server._serial.timeout * 1.5
         elif options.mode == 'tcp':
-            Simulator.__init__(self, modbus_tcp.TcpServer(address = '', port = options.port))
+            Simulator.__init__(self, modbus_tcp.TcpServer(address = '0.0.0.0', port = options.port))
         else:
             raise ModSimError('Unknown mode: %s' % (options.mode))
 
@@ -127,6 +127,9 @@ if __name__ == "__main__":
     parser.add_option('-m', '--mode',
                       default='rtu',
                       help='mode: rtu, tcp [default: rtu]')
+    parser.add_option('-t', '--hostname',
+                      default='0.0.0.0',
+                      help='hostname')
     parser.add_option('-p', '--port', type='int',
                       default=502,
                       help='IP port [default: 502]')
@@ -167,7 +170,7 @@ if __name__ == "__main__":
             sim.rtu.baudrate, sim.rtu.parity, str(options.id), str(modbus_map.base_addr))
     elif sim.mode == 'tcp':
         print 'Initialized modbus %s simulator: addr = %s  port = %s  slave id = %s  base address = %s' % (options.mode,
-            socket.gethostbyname(socket.gethostname()), options.port, str(options.id), str(modbus_map.base_addr))
+            options.hostname, options.port, str(options.id), str(modbus_map.base_addr))
     else:
         print 'Initialized modbus simulator to unknown mode: %s' % (sim.mode)
     

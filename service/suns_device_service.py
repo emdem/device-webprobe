@@ -11,6 +11,7 @@ import time
 import sunspec.core.client as client
 import sunspec.core.suns as suns
 import cherrypy
+import traceback
 import json
 
 
@@ -19,17 +20,18 @@ class SunsDeviceService(object):
     @cherrypy.expose
     def device(self, ifc='tcp', ipaddr='127.0.0.1', ipport=502, slaveid= 1, timeout=5, name=None, baudrate=9600, parity='N'):
         # return '{"status": "SUCCESS", "result": "device output - ipaddr = %s  ipport = %d  timeout = %d"}' % (ipaddr, ipport, timeout)
-
+        # required because cherrypi casts to string
+        ipport = int(ipport)
+        slaveid = int(slaveid)
+        timeout = int(timeout)
         status = 'SUCCESS'
         status_detail = ''
         result = ''
         jsonResult = ''
-
         try:
             if ifc == 'tcp':
-                status_detail += 'IP Address: %s, IP Port: %d, Slave Id: %d, Timeout: %d, ' % (ipaddr, ipport, slaveid, timeout)
-                # sd = client.SunSpecClientDevice(client.TCP, slaveid, ipaddr=ipaddr, ipport=ipport, timeout=timeout)
-                sd = client.SunSpecClientDevice(client.TCP, slaveid, ipaddr=ipaddr, ipport=ipport, timeout=5)
+                status_detail += 'IP Address: %s, IP Port: %d, Slave Id: %d, Timeout: %d, ' % (ipaddr, int(ipport), int(slaveid), int(timeout))
+                sd = client.SunSpecClientDevice(client.TCP, slaveid, ipaddr=ipaddr, ipport=ipport, timeout=timeout)
             elif ifc == 'rtu':
                 sd = client.SunSpecClientDevice(client.RTU, slaveid, name=name, baudrate=baudrate, timeout=timeout)
             elif ifc == 'mapped':
@@ -42,16 +44,16 @@ class SunsDeviceService(object):
             if sd is not None:
                 # read all models in the device
                 sd.read()
-
-#                jsonResult = json.dumps( sd )
+                print 'this is the next item'
+                print str(dir(sd.device.models_list[0]))
+                asdf = sd.device.models_list
+                #jsonResult = json.dumps( sd )
+                #cherrypi.log(jsonResult)
 
                 # NB: the following loop is not actually used - we return 'sd' to the client, & they sort it themselves
                 # One day, I hope to be able to get json serialization working!
                 for model in sd.device.models_list:
-                    if model.model_type.label:
-                        label = '%s (%s)' % (model.model_type.label, str(model.id))
-                    else:
-                        label = '(%s)' % (str(model.id))
+                    label = '(%s)' % (str(model.id))
                     result += '{"model":'
                     result += '{"name":"%s",' % (label)
                     result += '"value":"'
@@ -80,6 +82,7 @@ class SunsDeviceService(object):
                 result += '"}'
 
         except Exception, e:
+            traceback.print_exc()
             status = 'FAILURE'
             status_detail = str(e)
 
